@@ -2,7 +2,9 @@
 
 namespace App\Http\Services;
 
+use App\Exports\RentalExport;
 use App\Models\Rental;
+use Maatwebsite\Excel\Facades\Excel;
 
 class RentalService
 {
@@ -55,6 +57,47 @@ class RentalService
         if (!$rental)
             return false;
         return $rental->delete();
+    }
+
+    public function exportExcel($request)
+    {
+        $type = $request->input('type');
+        $model = $request->input('model');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $startPrice = $request->input('start_price');
+        $endPrice = $request->input('end_price');
+
+        $query = Rental::query()->with('car');
+        if ($type) {
+            $query->whereHas('car', function ($carQuery) use ($type) {
+                $carQuery->where('type', 'like', '%' . $type . '%');
+            });
+        }
+
+        if ($model) {
+            $query->whereHas('car', function ($carQuery) use ($model) {
+                $carQuery->where('model', 'like', '%' . $model . '%');
+            });
+        }
+
+        if ($startDate && $endDate) {
+            $query->whereBetween('start_date', [$startDate, $endDate])
+                ->orWhereBetween('end_date', [$startDate, $endDate]);
+        }
+
+        if ($startPrice && $endPrice) {
+            $query->whereHas('car', function ($carQuery) use ($startPrice, $endPrice) {
+                $carQuery->whereBetween('price_per_day', [$startPrice, $endPrice])
+                ;
+            });
+        }
+        $rentalsAll = $query->get();
+
+        if($rentalsAll->isEmpty())
+            return false;
+
+        return Excel::download(new RentalExport($rentalsAll), 'rentals.xlsx');
     }
 
 }

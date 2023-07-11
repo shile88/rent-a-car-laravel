@@ -18,8 +18,10 @@ return new class extends Migration
             $table->string('model');
             $table->integer('year');
             $table->float('price_per_day');
-            $table->string('photo');
-            $table->string('document');
+            $table->string('photo_path');
+            $table->string('photo_name');
+            $table->string('document_name');
+            $table->string('document_path');
         });
     }
 

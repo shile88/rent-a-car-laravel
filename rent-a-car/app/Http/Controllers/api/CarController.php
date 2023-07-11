@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCarRequest;
 use App\Http\Requests\UpdateCarRequest;
 use App\Http\Services\CarService;
-use App\Models\Car;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response as ResponseAlias;
 
@@ -23,31 +22,11 @@ class CarController extends Controller
      */
     public function index(Request $request)
     {
-        $type = $request->input('type');
-        $model = $request->input('model');
-        $year = $request->input('year');
-        $pricePerDay = $request->input('price_per_day');
-
-        $query = Car::query();
-        if ($type) {
-            $query->where('type', 'like', "%$type%");
+        $cars = $this->carService->searchCarByCriteria($request);
+        if(!$cars) {
+            return response(['message' => 'No cars with given search criteria'], ResponseAlias::HTTP_BAD_REQUEST);
         }
-
-        if ($model) {
-            $query->where('model', 'like', "%$model%");
-        }
-
-        if ($year) {
-            $query->where('year', $year);
-        }
-
-        if ($pricePerDay) {
-            $query->where('price_per_day', $pricePerDay);
-        }
-
-        $cars = $query->get();
-
-        return response()->json(['data' => $cars], ResponseAlias::HTTP_OK);
+        return $cars;
     }
 
     /**
@@ -55,7 +34,20 @@ class CarController extends Controller
      */
     public function store(StoreCarRequest $request)
     {
-        return $this->carService->store($request->validated());
+        $photoName = $request->file('photo')->getClientOriginalName();
+        $documentName = $request->file('document')->getClientOriginalName();
+        $photoPath = "storage/" . $request->file('photo')
+                ->store('car-photos');
+        $documentPath = "storage/" . $request->file('document')
+                ->store('car-documents');
+
+        $carData = $request->validated();
+        $carData['photo'] = $photoPath;
+        $carData['document'] = $documentPath;
+        $carData['photo_name'] = $photoName;
+        $carData['document_name'] = $documentName;
+
+        return $this->carService->store($carData);
     }
 
     /**
@@ -74,7 +66,7 @@ class CarController extends Controller
     {
         $updatedCar = $this->carService->update($request->validated(), $id);
         if(!$updatedCar) {
-            return response(['message' => 'Car not found'], ResponseAlias::HTTP_NOT_FOUND);
+            return response(['message' => 'Car not found'], ResponseAlias::HTTP_BAD_REQUEST);
         }
 
         return $updatedCar;
@@ -87,7 +79,7 @@ class CarController extends Controller
     {
         $deletedCar = $this->carService->delete($id);
         if(!$deletedCar){
-            return response(['message' => 'Car not found'], ResponseAlias::HTTP_NOT_FOUND);
+            return response(['message' => 'Car not found'], ResponseAlias::HTTP_BAD_REQUEST);
         }
 
         return response(['message' => 'Successfully deleted'], ResponseAlias::HTTP_OK);

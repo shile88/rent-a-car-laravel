@@ -30,6 +30,7 @@ Route::middleware('auth:sanctum')->group(function() {
         Route::post('/cars', [CarController::class, 'store']);
         Route::put('/cars/{car}', [CarController::class, 'update']);
         Route::delete('/cars/{car}', [CarController::class, 'destroy']);
+        Route::get('/rentals/excel', [RentalController::class, 'exportExcel']);
     });
 
     Route::apiResource('/rentals', RentalController::class);

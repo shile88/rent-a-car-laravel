@@ -27,7 +27,7 @@ class RentalController extends Controller
     {
         $adminOrUserRentals = $this->rentalService->indexRentals($request);
         if($adminOrUserRentals->isEmpty())
-            return response(['message'=>'Currently no rentals.'], ResponseAlias::HTTP_NOT_FOUND);
+            return response(['message'=>'Currently no rentals.'], ResponseAlias::HTTP_BAD_REQUEST);
         return RentalResource::collection($adminOrUserRentals);
     }
 
@@ -42,7 +42,7 @@ class RentalController extends Controller
         $rental = $this->rentalService->storeRental($validated);
 
         if(!$rental)
-            return response(['message'=>'Car not available for rent at given dates.'], ResponseAlias::HTTP_UNPROCESSABLE_ENTITY);
+            return response(['message'=>'Car not available for rent at given dates.'], ResponseAlias::HTTP_BAD_REQUEST);
 
         Mail::to(auth()->user()->email)->queue(new CarRentedMail($rental->car));
         return RentalResource::make($rental);
@@ -63,7 +63,7 @@ class RentalController extends Controller
     {
         $updatedRental = $this->rentalService->updateRental($request->validated(), $id);
         if(!$updatedRental)
-            return response(['message' => 'Car not found'], ResponseAlias::HTTP_NOT_FOUND);
+            return response(['message' => 'Car not found'], ResponseAlias::HTTP_BAD_REQUEST);
         return RentalResource::make($updatedRental);
     }
 
@@ -74,8 +74,17 @@ class RentalController extends Controller
     {
         $deletedRental = $this->rentalService->delete($id);
         if(!$deletedRental)
-            return response(['message' => 'Rental not found'], ResponseAlias::HTTP_NOT_FOUND);
+            return response(['message' => 'Rental not found'], ResponseAlias::HTTP_BAD_REQUEST);
         return response(['message' => 'Successfully deleted'], ResponseAlias::HTTP_OK);
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $export = $this->rentalService->exportExcel($request);
+
+        if(!$export)
+            return response(['message' => 'No rentals with given criteria'], ResponseAlias::HTTP_BAD_REQUEST);
+        return $export;
     }
 
 }

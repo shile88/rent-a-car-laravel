@@ -23,8 +23,10 @@ class CarFactory extends Factory
             'model' => fake()->colorName(),
             'year' => fake()->numberBetween(2000, date('Y')),
             'price_per_day' => fake()->numberBetween(10, 100),
-            'photo' => fake()->imageUrl(),
-            'document' =>fake()->imageUrl()
+            'photo_path' => fake()->imageUrl(),
+            'document_path' =>fake()->imageUrl(),
+            'photo_name' => fake()->firstName(),
+            'document_name' => fake()->firstName()
         ];
     }
 }
